@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaImage, FaVideo, FaCheckCircle, FaTimesCircle, FaStar } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaPlus, FaSearch, FaCheckCircle, FaTimesCircle, FaStar } from 'react-icons/fa'
 import toast from 'react-hot-toast'
 
 export default function ManageDrawings() {
@@ -13,9 +13,7 @@ export default function ManageDrawings() {
   const [selectedCategory, setSelectedCategory] = useState('all')
 
   useEffect(() => {
-    const saved = localStorage.getItem('drawings')
-    if (saved) { const p = JSON.parse(saved); setDrawings(p); setFilteredDrawings(p) }
-    setLoading(false)
+    fetchDrawings()
   }, [])
 
   useEffect(() => {
@@ -25,16 +23,39 @@ export default function ManageDrawings() {
     setFilteredDrawings(filtered)
   }, [searchTerm, selectedCategory, drawings])
 
-  const handleDelete = (id, title) => {
+  async function fetchDrawings() {
+    try {
+      const res = await fetch('/api/drawings')
+      const data = await res.json()
+      setDrawings(data)
+      setFilteredDrawings(data)
+    } catch { toast.error('Failed to load drawings') }
+    setLoading(false)
+  }
+
+  const handleDelete = async (id, title) => {
     if (window.confirm(`Are you sure you want to delete "${title}"?`)) {
-      const updated = drawings.filter(d => d.id !== id)
-      setDrawings(updated); localStorage.setItem('drawings', JSON.stringify(updated)); toast.success(`Deleted "${title}"`)
+      try {
+        await fetch(`/api/drawings/${id}`, { method: 'DELETE' })
+        const updated = drawings.filter(d => d.id !== id)
+        setDrawings(updated)
+        toast.success(`Deleted "${title}"`)
+      } catch { toast.error('Failed to delete') }
     }
   }
 
-  const toggleFeatured = (id) => {
-    const updated = drawings.map(d => d.id === id ? { ...d, featured: !d.featured } : d)
-    setDrawings(updated); localStorage.setItem('drawings', JSON.stringify(updated)); toast.success('Featured status updated')
+  const toggleFeatured = async (id) => {
+    try {
+      const drawing = drawings.find(d => d.id === id)
+      await fetch(`/api/drawings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...drawing, featured: !drawing.featured }),
+      })
+      const updated = drawings.map(d => d.id === id ? { ...d, featured: !d.featured } : d)
+      setDrawings(updated)
+      toast.success('Featured status updated')
+    } catch { toast.error('Failed to update') }
   }
 
   const categories = ['all', ...new Set(drawings.map(d => d.category).filter(Boolean))]
@@ -60,7 +81,7 @@ export default function ManageDrawings() {
           {filteredDrawings.map(drawing => (
             <div key={drawing.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition">
               <div className="h-48 bg-gray-100 flex items-center justify-center relative">
-                {drawing.image && (drawing.image.startsWith('data:') || drawing.image.startsWith('http')) ? <img src={drawing.image} alt={drawing.title} className="h-full w-full object-cover" /> : <span className="text-6xl">{drawing.image || '🎨'}</span>}
+                {drawing.image ? <img src={drawing.image} alt={drawing.title} className="h-full w-full object-cover" /> : <span className="text-6xl">{drawing.imagePlaceholder || '🎨'}</span>}
                 {drawing.featured && <div className="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center"><FaStar className="mr-1" /> Featured</div>}
                 {drawing.inStock !== false ? <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center"><FaCheckCircle className="mr-1" /> In Stock</div> : <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full flex items-center"><FaTimesCircle className="mr-1" /> Out of Stock</div>}
               </div>

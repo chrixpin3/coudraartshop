@@ -12,25 +12,33 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const drawings = JSON.parse(localStorage.getItem('drawings') || '[]')
-    const payments = JSON.parse(localStorage.getItem('payments') || '[]')
-    const pendingPayments = payments.filter(p => p.status === 'pending').length
-    const approvedPayments = payments.filter(p => p.status === 'approved').length
-    const totalRevenue = payments.filter(p => p.status === 'approved').reduce((sum, p) => sum + (p.amount || 0), 0)
-    const uniqueCustomers = new Set()
-    payments.forEach(p => { if (p.customerName) uniqueCustomers.add(p.customerName) })
+    async function loadStats() {
+      try {
+        const [drawingsRes] = await Promise.all([
+          fetch('/api/drawings'),
+        ])
+        const drawings = await drawingsRes.json()
+        const payments = JSON.parse(localStorage.getItem('payments') || '[]')
+        const pendingPayments = payments.filter(p => p.status === 'pending').length
+        const approvedPayments = payments.filter(p => p.status === 'approved').length
+        const totalRevenue = payments.filter(p => p.status === 'approved').reduce((sum, p) => sum + (p.amount || 0), 0)
+        const uniqueCustomers = new Set()
+        payments.forEach(p => { if (p.customerName) uniqueCustomers.add(p.customerName) })
 
-    setStats({
-      totalDrawings: drawings.length, totalOrders: payments.length, totalRevenue,
-      pendingOrders: payments.filter(p => p.status === 'pending').length,
-      pendingPayments, totalCustomers: uniqueCustomers.size, completedOrders: approvedPayments
-    })
-    setRecentOrders(payments.slice(0, 5).map(p => ({
-      id: p.orderId || `ORD-${p.id}`, customer: p.customerName || 'Unknown',
-      total: p.amount || 0, status: p.status || 'pending',
-      date: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : new Date().toLocaleDateString()
-    })))
-    setLoading(false)
+        setStats({
+          totalDrawings: drawings.length, totalOrders: payments.length, totalRevenue,
+          pendingOrders: payments.filter(p => p.status === 'pending').length,
+          pendingPayments, totalCustomers: uniqueCustomers.size, completedOrders: approvedPayments
+        })
+        setRecentOrders(payments.slice(0, 5).map(p => ({
+          id: p.orderId || `ORD-${p.id}`, customer: p.customerName || 'Unknown',
+          total: p.amount || 0, status: p.status || 'pending',
+          date: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : new Date().toLocaleDateString()
+        })))
+      } catch { /* ignore */ }
+      setLoading(false)
+    }
+    loadStats()
   }, [])
 
   const handleLogout = () => {

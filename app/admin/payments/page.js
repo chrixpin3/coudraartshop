@@ -25,17 +25,34 @@ export default function AdminPaymentApproval() {
     setFilteredPayments(filtered)
   }, [searchTerm, statusFilter, payments])
 
-  const handleApprove = (paymentId) => {
-    const updatedPayments = payments.map(p => {
-      if (p.id === paymentId) {
-        const drawings = JSON.parse(localStorage.getItem('drawings') || '[]')
-        const updatedDrawings = drawings.map(d => { const item = p.items?.find(i => i.title === d.title); if (item) { const newStock = Math.max(0, (d.stock || 0) - item.quantity); return { ...d, stock: newStock, inStock: newStock > 0 } } return d })
-        localStorage.setItem('drawings', JSON.stringify(updatedDrawings))
-        return { ...p, status: 'approved', approvedAt: new Date().toISOString() }
-      }
-      return p
-    })
-    setPayments(updatedPayments); localStorage.setItem('payments', JSON.stringify(updatedPayments)); toast.success('Payment approved and stock updated!')
+  const handleApprove = async (paymentId) => {
+    const payment = payments.find(p => p.id === paymentId)
+    if (!payment) return
+
+    if (payment.items && payment.items.length > 0) {
+      try {
+        const res = await fetch('/api/drawings')
+        const drawings = await res.json()
+        for (const item of payment.items) {
+          const drawing = drawings.find(d => d.title === item.title)
+          if (drawing) {
+            const newStock = Math.max(0, (drawing.stock || 0) - item.quantity)
+            await fetch(`/api/drawings/${drawing.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...drawing, stock: newStock }),
+            })
+          }
+        }
+      } catch { /* continue with local update */ }
+    }
+
+    const updatedPayments = payments.map(p =>
+      p.id === paymentId ? { ...p, status: 'approved', approvedAt: new Date().toISOString() } : p
+    )
+    setPayments(updatedPayments)
+    localStorage.setItem('payments', JSON.stringify(updatedPayments))
+    toast.success('Payment approved and stock updated!')
   }
 
   const handleReject = (paymentId) => {

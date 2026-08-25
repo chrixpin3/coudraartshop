@@ -11,23 +11,26 @@ export default function Home() {
   const { addToCart } = useCart()
 
   useEffect(() => {
-    const savedDrawings = localStorage.getItem('drawings')
-    if (savedDrawings) {
+    async function loadFeatured() {
       try {
-        const parsed = JSON.parse(savedDrawings)
-        const featured = parsed.filter(d => d.featured === true)
-        setFeaturedDrawings(featured.length > 0 ? featured : parsed.slice(0, 4))
+        const res = await fetch('/api/drawings?featured=true')
+        let data = await res.json()
+        if (data.length === 0) {
+          const allRes = await fetch('/api/drawings')
+          data = await allRes.json()
+          data = data.slice(0, 4)
+        }
+        setFeaturedDrawings(data)
       } catch {
         setFeaturedDrawings([])
       }
-    } else {
-      setFeaturedDrawings([])
+      setLoading(false)
     }
-    setLoading(false)
+    loadFeatured()
   }, [])
 
   const handleAddToCart = (drawing) => {
-    addToCart({ id: drawing.id, title: drawing.title, artist: drawing.artist, price: drawing.price, image: drawing.image || '🎨', quantity: 1 })
+    addToCart({ id: drawing.id, title: drawing.title, artist: drawing.artist, price: drawing.price, image: drawing.image || drawing.imagePlaceholder || '🎨', quantity: 1 })
   }
 
   if (loading) {
@@ -128,10 +131,10 @@ export default function Home() {
                 <Link href={`/drawings/${drawing.id}`}>
                   <div className="h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    {drawing.image && drawing.image.startsWith('data:') ? (
+                    {drawing.image ? (
                       <img src={drawing.image} alt={drawing.title} className="h-full w-full object-cover" />
                     ) : (
-                      <span className="text-7xl group-hover:scale-110 transition-transform duration-500">{drawing.image || '🎨'}</span>
+                      <span className="text-7xl group-hover:scale-110 transition-transform duration-500">{drawing.imagePlaceholder || '🎨'}</span>
                     )}
                     {drawing.featured && (
                       <span className="absolute top-3 left-3 bg-gradient-to-r from-gold-400 to-gold-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-lg">⭐ Featured</span>

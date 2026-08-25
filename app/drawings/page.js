@@ -5,13 +5,6 @@ import Link from 'next/link'
 import { FaShoppingCart, FaStar, FaSearch, FaPalette, FaArtstation } from 'react-icons/fa'
 import { useCart } from '@/lib/CartContext'
 
-const defaultDrawings = [
-  { id: 1, title: 'Starry Night Over the Rhone', artist: 'Vincent van Gogh', price: 299.99, image: '🌙', category: 'Landscape', rating: 4.8, reviews: 127, inStock: true, stock: 3, description: 'A beautiful depiction of the Rhone river at night' },
-  { id: 2, title: 'The Persistence of Memory', artist: 'Salvador Dali', price: 399.99, image: '🕐', category: 'Surrealism', rating: 4.9, reviews: 89, inStock: true, stock: 2, description: 'Surrealist melting clocks in a dreamlike landscape' },
-  { id: 3, title: 'The Scream', artist: 'Edvard Munch', price: 279.99, image: '😱', category: 'Expressionism', rating: 4.7, reviews: 156, inStock: true, stock: 4, description: 'Iconic expressionist painting of a figure on a bridge' },
-  { id: 4, title: 'Girl with a Pearl Earring', artist: 'Johannes Vermeer', price: 349.99, image: '👧', category: 'Portrait', rating: 4.9, reviews: 203, inStock: true, stock: 2, description: 'Mysterious portrait of a girl with a pearl earring' },
-]
-
 export default function DrawingList() {
   const [drawings, setDrawings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,18 +13,17 @@ export default function DrawingList() {
   const { addToCart } = useCart()
 
   useEffect(() => {
-    const savedDrawings = localStorage.getItem('drawings')
-    if (savedDrawings) {
+    async function loadDrawings() {
       try {
-        setDrawings(JSON.parse(savedDrawings))
+        const res = await fetch('/api/drawings')
+        const data = await res.json()
+        setDrawings(data)
       } catch {
         setDrawings([])
       }
-    } else {
-      localStorage.setItem('drawings', JSON.stringify(defaultDrawings))
-      setDrawings(defaultDrawings)
+      setLoading(false)
     }
-    setLoading(false)
+    loadDrawings()
   }, [])
 
   const categories = ['all', ...new Set(drawings.map(d => d.category).filter(Boolean))]
@@ -42,7 +34,7 @@ export default function DrawingList() {
   })
 
   const handleAddToCart = (drawing) => {
-    addToCart({ id: drawing.id, title: drawing.title, artist: drawing.artist, price: drawing.price, image: drawing.image || '🎨', quantity: 1 })
+    addToCart({ id: drawing.id, title: drawing.title, artist: drawing.artist, price: drawing.price, image: drawing.image || drawing.imagePlaceholder || '🎨', quantity: 1 })
   }
 
   if (loading) {
@@ -121,10 +113,10 @@ export default function DrawingList() {
               <div key={drawing.id} className="group bg-white/90 backdrop-blur-md rounded-2xl shadow-card overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 hover:scale-[1.02] border border-white/30">
                 <Link href={`/drawings/${drawing.id}`}>
                   <div className="h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden">
-                    {drawing.image && (drawing.image.startsWith('data:') || drawing.image.startsWith('http')) ? (
+                    {drawing.image ? (
                       <img src={drawing.image} alt={drawing.title} className="h-full w-full object-cover" />
                     ) : (
-                      <span className="text-7xl group-hover:scale-110 transition-transform duration-500">{drawing.image || '🎨'}</span>
+                      <span className="text-7xl group-hover:scale-110 transition-transform duration-500">{drawing.imagePlaceholder || '🎨'}</span>
                     )}
                     {drawing.inStock === false && (
                       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">

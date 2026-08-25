@@ -16,7 +16,7 @@ export default function Cart() {
         <div className="text-center max-w-md mx-auto">
           <div className="text-8xl mb-6">🛒</div>
           <h2 className="text-3xl font-bold mb-4">Your Cart is Empty</h2>
-          <p className="text-gray-600 mb-8">Looks like you haven't added any artwork to your cart yet.</p>
+          <p className="text-gray-600 mb-8">Looks like you haven&apos;t added any artwork to your cart yet.</p>
           <Link href="/drawings" className="inline-flex items-center bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition">
             <FaShoppingBag className="mr-2" /> Start Shopping
           </Link>
@@ -43,7 +43,13 @@ export default function Cart() {
               {cart.items.map((item) => (
                 <li key={item.id} className="p-6 hover:bg-gray-50 transition">
                   <div className="flex items-center">
-                    <div className="text-5xl mr-4">{item.image}</div>
+                    <div className="w-16 h-16 mr-4 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                      {item.image && (item.image.startsWith('data:') || item.image.startsWith('http') || item.image.startsWith('/')) ? (
+                        <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-3xl">{item.image || '🎨'}</span>
+                      )}
+                    </div>
                     <div className="flex-1">
                       <Link href={`/drawings/${item.id}`} className="font-semibold hover:text-blue-600 transition">{item.title}</Link>
                       <p className="text-gray-600 text-sm">by {item.artist}</p>

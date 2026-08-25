@@ -20,20 +20,24 @@ export default function DrawingDetails() {
   const [selectedMedia, setSelectedMedia] = useState(null)
 
   useEffect(() => {
-    const drawings = JSON.parse(localStorage.getItem('drawings') || '[]')
-    const found = drawings.find(d => d.id === parseInt(id)) || drawings.find(d => d.id.toString() === id)
-    if (found) {
-      setDrawing(found)
-    } else {
-      toast.error('Drawing not found')
-      router.push('/drawings')
+    async function loadDrawing() {
+      try {
+        const res = await fetch(`/api/drawings/${id}`)
+        if (!res.ok) throw new Error('Not found')
+        const found = await res.json()
+        setDrawing(found)
+      } catch {
+        toast.error('Drawing not found')
+        router.push('/drawings')
+      }
+      setLoading(false)
     }
-    setLoading(false)
+    loadDrawing()
   }, [id, router])
 
   const handleAddToCart = () => {
     if (!drawing || drawing.inStock === false) return
-    addToCart({ id: drawing.id, title: drawing.title, artist: drawing.artist, price: drawing.price, image: drawing.image || '🎨', quantity })
+    addToCart({ id: drawing.id, title: drawing.title, artist: drawing.artist, price: drawing.price, image: drawing.image || drawing.imagePlaceholder || '🎨', quantity })
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 3000)
   }
@@ -74,10 +78,10 @@ export default function DrawingDetails() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white rounded-lg shadow-lg p-4">
           <div className="relative h-[400px] flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden">
-            {drawing.image && (drawing.image.startsWith('data:') || drawing.image.startsWith('http')) ? (
+            {drawing.image ? (
               <img src={drawing.image} alt={drawing.title} className="h-full w-full object-contain" />
             ) : (
-              <span className="text-9xl">{drawing.image || '🎨'}</span>
+              <span className="text-9xl">{drawing.imagePlaceholder || '🎨'}</span>
             )}
             {drawing.media && drawing.media.length > 0 && (
               <div className="absolute bottom-4 right-4 flex space-x-2">

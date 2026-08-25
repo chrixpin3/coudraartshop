@@ -4,14 +4,17 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FaArrowLeft, FaPlus, FaTimes, FaVideo, FaTrash } from 'react-icons/fa'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 import toast from 'react-hot-toast'
 
 export default function AddDrawing() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
+  const [imageFile, setImageFile] = useState(null)
   const [mediaFiles, setMediaFiles] = useState([])
-  const [formData, setFormData] = useState({ title: '', artist: '', description: '', price: '', category: '', dimensions: '', year: '', medium: '', stock: '', featured: false, image: null })
+  const [mediaPreviews, setMediaPreviews] = useState([])
+  const [formData, setFormData] = useState({ title: '', artist: '', description: '', price: '', category: '', dimensions: '', year: '', medium: '', stock: '', featured: false })
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -21,7 +24,7 @@ export default function AddDrawing() {
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (file) {
-      setFormData({ ...formData, image: file })
+      setImageFile(file)
       const reader = new FileReader()
       reader.onload = (ev) => setImagePreview(ev.target.result)
       reader.readAsDataURL(file)
@@ -31,34 +34,53 @@ export default function AddDrawing() {
   const handleMediaAdd = (e) => {
     const file = e.target.files[0]
     if (file) {
+      const isVideo = file.type.startsWith('video/')
       const reader = new FileReader()
       reader.onload = (event) => {
-        const isVideo = file.type.startsWith('video/')
-        setMediaFiles([...mediaFiles, { id: Date.now(), type: isVideo ? 'video' : 'image', url: event.target.result, title: file.name, isPrimary: mediaFiles.length === 0 }])
+        setMediaFiles([...mediaFiles, { file, type: isVideo ? 'video' : 'image', title: file.name }])
+        setMediaPreviews([...mediaPreviews, { url: event.target.result, type: isVideo ? 'video' : 'image', title: file.name }])
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  const removeMedia = (index) => {
+    setMediaFiles(mediaFiles.filter((_, i) => i !== index))
+    setMediaPreviews(mediaPreviews.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      const existingDrawings = JSON.parse(localStorage.getItem('drawings') || '[]')
-      const newDrawing = {
-        id: Date.now(), title: formData.title, artist: formData.artist, description: formData.description,
-        price: parseFloat(formData.price), category: formData.category || 'Uncategorized',
-        dimensions: formData.dimensions || 'N/A', year: formData.year || 'N/A', medium: formData.medium || 'N/A',
-        stock: parseInt(formData.stock) || 0, featured: formData.featured || false,
-        image: imagePreview || '🎨',
-        media: mediaFiles.map(m => ({ type: m.type, url: m.url, title: m.title, isPrimary: m.isPrimary })),
-        rating: 0, reviews: 0, inStock: parseInt(formData.stock) > 0, createdAt: new Date().toISOString()
+      let imageUrl = null
+      if (imageFile) {
+        imageUrl = await uploadToCloudinary(imageFile)
       }
-      localStorage.setItem('drawings', JSON.stringify([newDrawing, ...existingDrawings]))
-      toast.success('Drawing added successfully! 🎉')
+
+      const uploadedMedia = []
+      for (let i = 0; i < mediaFiles.length; i++) {
+        const m = mediaFiles[i]
+        const url = await uploadToCloudinary(m.file)
+        uploadedMedia.push({ type: m.type, url, title: m.title, isPrimary: i === 0 })
+      }
+
+      const res = await fetch('/api/drawings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          image: imageUrl,
+          media: uploadedMedia,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to add drawing')
+      toast.success('Drawing added successfully!')
       router.push('/admin/manage')
-    } catch { toast.error('Failed to add drawing') } finally { setLoading(false) }
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to add drawing')
+    } finally { setLoading(false) }
   }
 
   return (
@@ -97,17 +119,17 @@ export default function AddDrawing() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Main Image</label>
               <input type="file" accept="image/*" onChange={handleImageChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-              {imagePreview && <div className="mt-2 relative"><img src={imagePreview} alt="Preview" className="h-32 w-auto rounded-lg object-cover border" /><button type="button" onClick={() => { setImagePreview(null); setFormData({...formData, image: null}) }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"><FaTimes /></button></div>}
+              {imagePreview && <div className="mt-2 relative"><img src={imagePreview} alt="Preview" className="h-32 w-auto rounded-lg object-cover border" /><button type="button" onClick={() => { setImagePreview(null); setImageFile(null) }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"><FaTimes /></button></div>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Additional Media</label>
               <input type="file" accept="image/*,video/*" onChange={handleMediaAdd} className="w-full px-4 py-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
-              {mediaFiles.length > 0 && <div className="mt-3 grid grid-cols-2 gap-2">{mediaFiles.map(m => <div key={m.id} className="relative group">{m.type === 'video' ? <div className="bg-gray-900 rounded-lg h-20 flex items-center justify-center"><FaVideo className="text-white text-2xl" /></div> : <img src={m.url} alt={m.title} className="h-20 w-full object-cover rounded-lg" />}<button type="button" onClick={() => setMediaFiles(mediaFiles.filter(f => f.id !== m.id))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition"><FaTrash className="text-xs" /></button></div>)}</div>}
+              {mediaPreviews.length > 0 && <div className="mt-3 grid grid-cols-2 gap-2">{mediaPreviews.map((m, i) => <div key={i} className="relative group">{m.type === 'video' ? <div className="bg-gray-900 rounded-lg h-20 flex items-center justify-center"><FaVideo className="text-white text-2xl" /></div> : <img src={m.url} alt={m.title} className="h-20 w-full object-cover rounded-lg" />}<button type="button" onClick={() => removeMedia(i)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition"><FaTrash className="text-xs" /></button></div>)}</div>}
             </div>
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-gray-200 flex flex-col sm:flex-row gap-4">
-          <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center disabled:opacity-50">{loading ? 'Adding...' : <><FaPlus className="mr-2" /> Add Drawing</>}</button>
+          <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold flex items-center justify-center disabled:opacity-50">{loading ? 'Uploading...' : <><FaPlus className="mr-2" /> Add Drawing</>}</button>
           <button type="button" onClick={() => router.push('/admin')} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">Cancel</button>
         </div>
       </form>
