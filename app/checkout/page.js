@@ -116,7 +116,7 @@ export default function Checkout() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
                 <div className="relative"><FaPhone className="absolute left-3 top-3 text-gray-400" />
-                  <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="0788 123 456" />
+                  <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+250 793 174 951" />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">📱 Your phone number for payment confirmation</p>
               </div>
@@ -159,7 +159,7 @@ export default function Checkout() {
               <p className="text-sm text-blue-600">Send the exact amount to the following mobile money number:</p>
               <div className="mt-3 bg-white rounded-lg p-4 text-center border-2 border-dashed border-blue-300">
                 <p className="text-sm text-gray-500">Mobile Money Number</p>
-                <p className="text-3xl font-bold text-blue-600">0788 123 456</p>
+                <p className="text-3xl font-bold text-blue-600">+250 793 174 951</p>
                 <p className="text-xs text-gray-400 mt-1">Airtel Money / MTN Mobile Money</p>
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function Checkout() {
               <p className="text-sm font-semibold text-green-700 mb-2">Payment Summary:</p>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-600">Amount to send:</span><strong className="text-green-600">${total.toFixed(2)}</strong></div>
-                <div className="flex justify-between"><span className="text-gray-600">Mobile Money:</span><strong>0788 123 456</strong></div>
+                <div className="flex justify-between"><span className="text-gray-600">Mobile Money:</span><strong>+250 793 174 951</strong></div>
                 <div className="flex justify-between"><span className="text-gray-600">Reference:</span><strong className="font-mono text-blue-600">{generateTransactionCode()}</strong></div>
               </div>
             </div>
