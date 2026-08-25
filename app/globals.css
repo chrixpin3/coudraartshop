@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-xl font-semibold 
+           hover:from-primary-600 hover:to-primary-700 transition-all duration-300 
+           shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 
+           transform hover:scale-105 active:scale-95;
+  }
+  .btn-secondary {
+    @apply bg-gradient-to-r from-secondary-500 to-secondary-600 text-white px-6 py-3 rounded-xl font-semibold 
+           hover:from-secondary-600 hover:to-secondary-700 transition-all duration-300 
+           shadow-lg shadow-secondary-500/30 hover:shadow-secondary-500/50 
+           transform hover:scale-105 active:scale-95;
+  }
+  .btn-accent {
+    @apply bg-gradient-to-r from-accent-500 to-accent-600 text-white px-6 py-3 rounded-xl font-semibold 
+           hover:from-accent-600 hover:to-accent-700 transition-all duration-300 
+           shadow-lg shadow-accent-500/30 hover:shadow-accent-500/50 
+           transform hover:scale-105 active:scale-95;
+  }
+  .btn-success {
+    @apply bg-gradient-to-r from-success-500 to-success-600 text-white px-6 py-3 rounded-xl font-semibold 
+           hover:from-success-600 hover:to-success-700 transition-all duration-300 
+           shadow-lg shadow-success-500/30 hover:shadow-success-500/50 
+           transform hover:scale-105 active:scale-95;
+  }
+  .btn-gold {
+    @apply bg-gradient-to-r from-gold-500 to-gold-600 text-white px-6 py-3 rounded-xl font-semibold 
+           hover:from-gold-600 hover:to-gold-700 transition-all duration-300 
+           shadow-lg shadow-gold-500/30 hover:shadow-gold-500/50 
+           transform hover:scale-105 active:scale-95;
+  }
+  .card-glass {
+    @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-xl rounded-2xl;
+  }
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02];
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500 bg-clip-text text-transparent;
+  }
+  .gradient-text-gold {
+    @apply bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 bg-clip-text text-transparent;
+  }
+  .hero-gradient {
+    @apply bg-gradient-to-br from-primary-600 via-accent-600 to-secondary-600;
+  }
+  .section-gradient {
+    @apply bg-gradient-to-br from-gray-50 via-white to-gray-100;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-gradient { animation: gradient 15s ease infinite; background-size: 200% 200%; }
+.animate-shine { animation: shine 2s linear infinite; background-size: 200% auto; }
+.animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+.animate-scale-in { animation: scaleIn 0.5s ease-out forwards; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { @apply bg-gray-100 rounded-full; }
+::-webkit-scrollbar-thumb { @apply bg-gradient-to-b from-primary-500 to-secondary-500 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply from-primary-600 to-secondary-600; }
+
+.spinner {
+  @apply border-4 border-gray-200 border-t-primary-500 rounded-full w-12 h-12;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.glass { @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-xl; }
+.neon-glow { box-shadow: 0 0 30px rgba(99, 102, 241, 0.3), 0 0 60px rgba(99, 102, 241, 0.1); }
+@media (max-width: 640px) { .text-responsive { font-size: 0.875rem; } }
